@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>インタラクティブ動画クイズ｜薬師寺（YouTube対応）</title>
+  <style>
+    :root{--bg:#0a0f1a;--panel:#0f172a;--ink:#e6edf3;--muted:#9aa4b2;--brand:#22d3ee;--accent:#22c55e;--danger:#ef4444;--ring:rgba(34,211,238,.35)}
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans JP,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;background:radial-gradient(1000px 600px at 20% -10%,rgba(34,211,238,.08),transparent) ,radial-gradient(900px 500px at 120% 0%,rgba(34,197,94,.06),transparent) ,linear-gradient(180deg,#070b13,#0b1320 30%,#0d1628);color:var(--ink)}
+    .container{max-width:1000px;margin:0 auto;padding:28px}
+    .card{background:rgba(15,23,42,.8);border:1px solid rgba(255,255,255,.06);border-radius:20px;box-shadow:0 10px 40px rgba(0,0,0,.35);overflow:hidden}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 22px;border-bottom:1px solid rgba(255,255,255,.08);background:linear-gradient(90deg, rgba(34,211,238,.15), transparent)}
+    header h1{margin:0;font-size:1.15rem;letter-spacing:.02em}
+    .score{font-weight:800}
+    .section{padding:22px}
+    .title{font-size:1.1rem;font-weight:800;margin:0 0 8px}
+    .meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0 14px}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.07);color:var(--muted);font-size:.86rem}
+    .player-wrap{position:relative;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:#000}
+    .aspect{width:100%;aspect-ratio:16/9}
+    .quiz{margin-top:18px;display:none;animation:fade .3s ease}
+    .quiz.active{display:block}
+    .q{margin:16px 0;padding:16px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)}
+    .q h3{margin:0 0 10px;font-size:1rem}
+    .choices{display:grid;gap:10px}
+    .choice{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02);cursor:pointer}
+    .choice:focus-within{outline:2px solid var(--ring);outline-offset:2px}
+    .choice input{margin-top:2px}
+    .actions{display:flex;gap:12px;margin-top:16px}
+    button{appearance:none;border:0;border-radius:12px;padding:12px 16px;font-weight:800;cursor:pointer}
+    .btn-primary{background:var(--brand);color:#00242b}
+    .btn-secondary{background:rgba(255,255,255,.08);color:var(--ink)}
+    .btn-next{background:var(--accent);color:#062a12}
+    .btn-disabled{opacity:.55;cursor:not-allowed}
+    .feedback{margin-top:10px;font-weight:800}
+    .ok{color:var(--accent)}
+    .ng{color:var(--danger)}
+    .summary{display:none;padding:22px}
+    .summary.active{display:block}
+    .hr{height:1px;background:rgba(255,255,255,.1);margin:16px 0}
+    .progress{height:6px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden}
+    .bar{height:100%;width:0%;background:linear-gradient(90deg,var(--brand),#60a5fa);transition:width .3s ease}
+    @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <header>
+        <h1>インタラクティブ動画クイズ｜薬師寺（YouTube）</h1>
+        <div class="score" id="score">得点：0</div>
+      </header>
+      <div class="section">
+        <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
+      </div>
+      <div class="section" id="app"><!-- app mounts here --></div>
+    </div>
+  </div>
+
+  <!-- ここが重要：YouTubeの動画リンク貼り場所について -->
+  <!-- 下の SEGMENTS 配列の "youtubeId" に、YouTube URL の「v=」以降のIDだけを貼り付けてください。
+       例）https://www.youtube.com/watch?v=AbCdEfGh123 → youtubeId: "AbCdEfGh123"
+       もし短縮URL（youtu.be/AbCdEfGh123）の場合も同じく ID 部分「AbCdEfGh123」を貼ります。 -->
+
+  <script>
+    const SEGMENTS = [
+      {
+        title: "動画1",
+        youtubeId: "nKnMvi0yBUo", // ← ここに動画1のID
+        questions: [
+          { type: "single", prompt: "薬師寺の中軸線上（南→北）の正しい並びは？", choices: [
+              { text: "中門→金堂→講堂", correct: true },
+              { text: "南大門→講堂→金堂", correct: false },
+              { text: "金堂→中門→講堂", correct: false },
+              { text: "講堂→塔→金堂", correct: false }
+            ], points: 10, explanation: "南から中門・金堂・講堂が一直線。" },
+          { type: "single", prompt: "現在の薬師寺で拡張されたのは？", choices: [
+              { text: "南大門（三間→五間）と回廊（単廊→複廊）", correct: true },
+              { text: "金堂（単層→三層）", correct: false },
+              { text: "講堂（木造→鉄筋）", correct: false },
+              { text: "東塔（五重→三重）", correct: false }
+            ], points: 10, explanation: "南大門は三間→五間、回廊は単廊→複廊。" },
+          { type: "single", prompt: "『薬師寺縁起絵巻』の作者と制作年は？", choices: [
+              { text: "明誉古磵・1716年（享保元）", correct: true },
+              { text: "作者不詳・平安末期", correct: false },
+              { text: "狩野永徳・桃山時代", correct: false },
+              { text: "土佐光起・江戸後期", correct: false }
+            ], points: 10, explanation: "明誉古磵が1716年に制作。" }
+        ]
+      },
+      {
+        title: "動画2",
+        youtubeId: "v83BV3whyPY", // ← ここに動画2のID
+        questions: [
+          { type: "single", prompt: "金堂復興の資金調達として採られた方針は？", choices: [
+              { text: "大企業寄付中心", correct: false },
+              { text: "国費のみ", correct: false },
+              { text: "百万巻写経勧進による広募", correct: true },
+              { text: "海外財団の助成のみ", correct: false }
+            ], points: 10, explanation: "『百万巻写経勧進』で広く浄財を集めた。" },
+          { type: "single", prompt: "薬師三尊の正しい組み合わせは？", choices: [
+              { text: "中尊：薬師如来／左：日光菩薩／右：月光菩薩", correct: true },
+              { text: "中尊：阿弥陀／左：観音／右：勢至", correct: false },
+              { text: "中尊：大日／左：不動／右：愛染", correct: false },
+              { text: "中尊：釈迦／左：弥勒／右：観音", correct: false }
+            ], points: 10, explanation: "薬師如来・日光・月光の三尊形式。" },
+          { type: "single", prompt: "日光・月光菩薩の信仰形態に最も近いものは？", choices: [
+              { text: "単独造像・独立信仰が盛ん", correct: false },
+              { text: "薬師如来の脇侍として造像されるのが通例", correct: true },
+              { text: "西方極楽世界の主尊である", correct: false },
+              { text: "天台系のみに限られる", correct: false }
+            ], points: 10, explanation: "脇侍として造像されるのが基本。" }
+        ]
+      },
+      {
+        title: "動画3",
+        youtubeId: "HkMHqBVR0kk", // ← ここに動画3のID
+        questions: [
+          { type: "single", prompt: "東塔が『六重』に見える主因は？", choices: [
+              { text: "各層に裳階（もこし）が付く", correct: true },
+              { text: "実は六重塔である", correct: false },
+              { text: "心柱が二重構造", correct: false },
+              { text: "相輪が二段構成", correct: false }
+            ], points: 10, explanation: "三重塔だが裳階で六重に見える。" },
+          { type: "single", prompt: "西塔復元に関する正しい記述は？", choices: [
+              { text: "1528年に焼失し、1976年の発掘調査を経て創建時姿に復元", correct: true },
+              { text: "江戸前期に焼失し、昭和初期に鉄筋で再建", correct: false },
+              { text: "近世まで現存し、平成に初めて焼失", correct: false },
+              { text: "発掘調査は行われていない", correct: false }
+            ], points: 10, explanation: "1976年の調査を契機に復元。" },
+          { type: "single", prompt: "創建期の薬師寺式軒平瓦の特徴は？", choices: [
+              { text: "下辺に鋸歯文、上辺に連珠文", correct: true },
+              { text: "上辺に鋸歯文、下辺に連珠文", correct: false },
+              { text: "忍冬唐草は用いられない", correct: false },
+              { text: "金堂では出土していない", correct: false }
+            ], points: 10, explanation: "下：鋸歯文／上：連珠文が特徴。" }
+        ]
+      }
+    ];
+
+    // ===== 実装部（YouTube IFrame APIで再生終了を検知） =====
+    let totalScore = 0; let current = 0; const app = document.getElementById('app'); const scoreBox = document.getElementById('score'); const bar = document.getElementById('bar');
+    function updateScore(delta=0){ totalScore += delta; scoreBox.textContent = `得点：${totalScore}`; }
+    function updateBar(){ const pct = ((current) / SEGMENTS.length) * 100; bar.style.width = pct + '%'; }
+
+    // YouTube API 動的ロード
+    let YT_READY = false; const onYouTubeIframeAPIReadyCallbacks = [];
+    function loadYT(){ return new Promise((resolve)=>{ if(YT_READY||window.YT?.Player){YT_READY=true;resolve();return;} const s=document.createElement('script'); s.src='https://www.youtube.com/iframe_api'; window.onYouTubeIframeAPIReady=function(){YT_READY=true; resolve(); onYouTubeIframeAPIReadyCallbacks.forEach(fn=>fn());}; document.head.appendChild(s); }); }
+
+    function createPlayer(containerId, videoId, onEnded){
+      if(!YT_READY && !window.YT){ onYouTubeIframeAPIReadyCallbacks.push(()=> createPlayer(containerId, videoId, onEnded)); return; }
+      const player = new YT.Player(containerId, {
+        width: '100%', height: '100%', videoId,
+        playerVars: { rel:0, modestbranding:1, playsinline:1 },
+        events: { 'onStateChange': (e)=>{ if(e.data === YT.PlayerState.ENDED){ onEnded && onEnded(); } } }
+      });
+      return player;
+    }
+
+    function renderSegment(idx){
+      const seg = SEGMENTS[idx]; app.innerHTML=''; updateBar();
+      const title = document.createElement('div'); title.className='title'; title.textContent = `${idx+1}/${SEGMENTS.length}　${seg.title}`;
+      const meta = document.createElement('div'); meta.className='meta'; meta.innerHTML = `<span class="pill">動画を最後まで再生するとクイズが表示されます</span>`;
+
+      const wrap = document.createElement('div'); wrap.className='player-wrap';
+      const aspect = document.createElement('div'); aspect.className='aspect';
+      const playerBox = document.createElement('div'); playerBox.id = `player-${idx}`; playerBox.style.width='100%'; playerBox.style.height='100%';
+      aspect.appendChild(playerBox); wrap.appendChild(aspect);
+
+      const quiz = document.createElement('div'); quiz.className='quiz';
+      const qWrap = document.createElement('div');
+      const answered = new Array(seg.questions.length).fill(false);
+      const selected = new Array(seg.questions.length).fill(null);
+
+      seg.questions.forEach((q, qi)=>{
+        const qBox = document.createElement('div'); qBox.className='q';
+        const h3 = document.createElement('h3'); h3.textContent = `Q${qi+1}. ${q.prompt}`; qBox.appendChild(h3);
+        const list = document.createElement('div'); list.className='choices';
+        q.choices.forEach((ch, ci)=>{
+          const label=document.createElement('label'); label.className='choice';
+          const input=document.createElement('input'); input.type='radio'; input.name=`q-${idx}-${qi}`; input.value=ci; input.addEventListener('change',()=>{ selected[qi]=ci;});
+          const span=document.createElement('span'); span.textContent=ch.text; label.appendChild(input); label.appendChild(span); list.appendChild(label);
+        });
+        const actions=document.createElement('div'); actions.className='actions';
+        const btnCheck=document.createElement('button'); btnCheck.className='btn-primary'; btnCheck.textContent='答え合わせ';
+        btnCheck.addEventListener('click',()=>{
+          if(selected[qi]===null){ btnCheck.classList.add('btn-disabled'); setTimeout(()=>btnCheck.classList.remove('btn-disabled'),600); return; }
+          if(answered[qi]) return; answered[qi]=true;
+          const isOK = q.choices[selected[qi]].correct===true; const fb=qBox.querySelector('.feedback')||document.createElement('div'); fb.className='feedback';
+          fb.innerHTML = isOK ? `<span class='ok'>正解！ +${q.points}点</span>　<span class='small'>${q.explanation||''}</span>` : `<span class='ng'>不正解</span>　<span class='small'>${q.explanation||''}</span>`;
+          if(!qBox.contains(fb)) qBox.appendChild(fb); if(isOK) updateScore(q.points);
+        });
+        actions.appendChild(btnCheck); qBox.appendChild(list); qBox.appendChild(actions); qWrap.appendChild(qBox);
+      });
+
+      const hr=document.createElement('div'); hr.className='hr';
+      const nav=document.createElement('div'); nav.className='actions';
+      const btnNext=document.createElement('button'); btnNext.className='btn-next'; btnNext.textContent = (idx<SEGMENTS.length-1)?'次の動画へ':'結果を見る';
+      btnNext.addEventListener('click',()=>{
+        const anyChecked = answered.some(v=>v); if(!anyChecked){ btnNext.classList.add('btn-disabled'); setTimeout(()=>btnNext.classList.remove('btn-disabled'),600); return; }
+        if(idx < SEGMENTS.length-1){ current=idx+1; renderSegment(current); } else { renderSummary(); }
+      });
+      nav.appendChild(btnNext);
+
+      quiz.appendChild(qWrap); quiz.appendChild(hr); quiz.appendChild(nav);
+
+      app.appendChild(title); app.appendChild(meta); app.appendChild(wrap); app.appendChild(quiz);
+
+      // プレイヤー生成と終了検知
+      loadYT().then(()=>{ createPlayer(`player-${idx}`, seg.youtubeId, ()=>{ quiz.classList.add('active'); window.scrollTo({ top: app.offsetTop + wrap.offsetTop, behavior:'smooth' }); }); });
+    }
+
+    function renderSummary(){ app.innerHTML=''; const box=document.createElement('div'); box.className='summary active';
+      const h2=document.createElement('h2'); h2.textContent='結果'; const p=document.createElement('p'); p.innerHTML=`合計得点：<strong>${totalScore}</strong>`;
+      const again=document.createElement('button'); again.className='btn-secondary'; again.textContent='最初からやり直す';
+      again.addEventListener('click',()=>{ totalScore=0; scoreBox.textContent='得点：0'; current=0; renderSegment(0); updateBar(); });
+      box.appendChild(h2); box.appendChild(p); box.appendChild(again); app.appendChild(box); bar.style.width='100%'; }
+
+    // 初期化
+    renderSegment(current);
+  </script>
+</body>
+</html>
